@@ -10,8 +10,8 @@ require "src/NumberToTextConverter.php";
 		
 		//function to generate the object needed so that object recreation will not be necessary
 		//seet of function to test the input validation
-		private function createObject(){
-			$result = new NumberToTextConverter();
+		private function createObject($val=false){
+			$result = $val?new NumberToTextConverter($val):new NumberToTextConverter();
 			return $result;
 		}
 		public function testValidateInputNonNumeric(){
@@ -201,6 +201,13 @@ require "src/NumberToTextConverter.php";
 			$value= '999000000001987';
 			$actual= $obj->convertToWord($value);
 			$this->assertFalse($actual);
+		}
+		public function testInputSizeExpansion(){
+			$obj = $this->createObject(array('thousand','million','billion','trillion'));
+			$value= '990000100001987';
+			$actual= $obj->convertToWord($value);
+			$expected="nine hundred and ninety trillion one hundred million one thousand nine hundred and eighty seven";
+			$this->assertEquals($expected,$actual);
 		}
 	}
 

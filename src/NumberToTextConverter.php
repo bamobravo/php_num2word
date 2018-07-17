@@ -2,11 +2,19 @@
 /**
 * This class help convert a numberic value to it word equivalent
 */
+
+//code to test the function
+$obj = new NumberToTextConverter();
+$val = "999999999909909";
+echo $obj->convertToWord($val)."\n";
 class NumberToTextConverter 
 {
-
+	private $highValues ;
+	function __construct($high=array('thousand','million','billion','trillion')){
+		$this->highValues=$high;
+	}
 	public function validateInput($input){
-		$maxLength = 12;
+		$maxLength = (count($this->highValues) + 1) *3;
 		$signs = array('-','+');
 		$input= (string)$input;
 		if (in_array($input[0], $signs)) {
@@ -39,7 +47,8 @@ class NumberToTextConverter
 			$first = (int)$input[0];
 			$firstPart = $tens[$first-2];
 			$secondPart = $this->getlessThanTwenty($input[1]);
-			return $firstPart.' '.$secondPart;
+			$separator =' ';
+			return trim($firstPart.' '.$secondPart);
 		}
 		return false;
 	}
@@ -51,7 +60,6 @@ class NumberToTextConverter
 	}
 
 	public function getMaxUnitValue($value,$isRecurse=false){
-		$highValues = array('thousand','million','billion');
 		$value=$this->transformInput($value);
 		$len = strlen($value);
 		$prefix ='and ';
@@ -59,70 +67,46 @@ class NumberToTextConverter
 			return $this->getTens($value);
 		}
 		if ($len ==3) {
-			
-			$first = $this->getTens($value[0]);
-			$hundred = $first.' hundred';
-			$tens = $this->getTens(substr($value, 1));
-			$tens = empty($tens)?$tens:' and '.$tens;
-			if ($isRecurse==false || !empty($tens)) {
-				$prefix='';
-			}
-			return $prefix.$hundred.$tens;
-		} 
-		// $index = (($len-1)/2)-1;
-		if ($len > 3 and $len <7) {
-			$first = substr($value, 0,$len-3);
-			$first = $this->getMaxUnitValue($first);
-			$thousand= $first.' thousand';
-			$hundred = $this->getMaxUnitValue(substr($value, 3),true);
-			if ($isRecurse==false) {
-					$prefix='';
-				}
-			if (!empty($hundred)) {
-				if (strpos($hundred, 'and')===false) {
-					$hundred='and '.$hundred;
-				}
-				$hundred =' '.$hundred;
-				$prefix='';
-			}
-			return $prefix.$thousand.$hundred;
+			return $this->getHundred($value,$prefix,$isRecurse);
 		}
-		if ($len > 6 and $len <10) {
-			$first = substr($value, 0,$len-6);
-			$first = $this->getMaxUnitValue($first);
-			$million= $first.' million';
-			$thousand = $this->getMaxUnitValue(substr($value, -6),true);
-			if ($isRecurse==false) {
-					$prefix='';
-				}
-			if (!empty($thousand)) {
-				if (strpos($thousand, 'and')===false) {
-					$thousand='and '.$thousand;
-				}
-				$thousand =' '.$thousand;
-				$prefix='';
-			}
-			return $prefix.$million.$thousand;
-		}
-		if ($len > 9 and $len <13) {
-			$first = substr($value, 0,$len-9);
-			$first = $this->getMaxUnitValue($first);
-			$billion= $first.' billion';
-			$million = $this->getMaxUnitValue(substr($value, -9),true);
-			if ($isRecurse==false) {
-					$prefix='';
-				}
-			if (!empty($million)) {
-				if (strpos($million, 'and')===false) {
-					$million='and '.$million;
-				}
-				$million =' '.$million;
-				$prefix='';
-			}
-			return $prefix.$billion.$million;
-		}
+		return $this->getHigherDigitText($value,$prefix,$isRecurse);
 	}
 
-
+	private function getHigherDigitText($value,$prefix,$isRecurse){
+		$len = strlen($value);
+		$index = (int)(($len-1)/3)-1;
+		$name = $this->highValues[$index];
+		$nameSize = ($index+1)*3;
+		$firstPart = substr($value,0, $len-$nameSize);
+		$first = $this->getMaxUnitValue($firstPart);
+		$first = $first.' '.$name;
+		$secondPart = substr($value, $len-$nameSize);
+		$second = $this->getMaxUnitValue($secondPart,true);
+		$second = $this->processConjunction($second,$prefix,$isRecurse);
+		return $prefix.$first.$second;
+	}
+	private function processConjunction($second,&$prefix,$isRecurse){
+		if ($isRecurse==false) {
+			$prefix='';
+		}
+		if (!empty($second)) {
+			if (strpos($second, 'and')===false) {
+				$second='and '.$second;
+			}
+			$second =' '.$second;
+			$prefix='';
+		}
+		return $second;
+	}
+	private function getHundred($value,$prefix,$isRecurse){
+		$first = $this->getTens($value[0]);
+		$hundred = $first.' hundred';
+		$tens = $this->getTens(substr($value, 1));
+		$tens = empty($tens)?$tens:' and '.$tens;
+		if ($isRecurse==false || !empty($tens)) {
+			$prefix='';
+		}
+		return $prefix.$hundred.$tens;
+	}
 }
  ?>
